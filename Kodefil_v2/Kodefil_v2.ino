@@ -213,7 +213,7 @@ void tidUte() {
 void blinking() {
   munnPaa();
   munn.show();
-  delay(200)
+  delay(200);
   munnAv();
   munn.show();
   delay(200);
