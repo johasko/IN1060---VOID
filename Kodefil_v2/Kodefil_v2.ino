@@ -1,208 +1,259 @@
 /* Inputs:
- * Munn = 2
+ * Munn = 7
  * Øyne = 8;
  */
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
- #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+ #include <avr/power.h>               // Required for 16 MHz Adafruit Trinket
 #endif
 
-#define MUNN           2
+#include <SPI.h>
+#include <MFRC522.h>
+
+#define MUNN           7
 #define OYNE           8
 
-#define NUMPIXELS  15 //Antall LEDs i stripen
-#define PIXELOYE   12 //Antall LEDs i oynene
+#define RST_PIN        6
+#define SS_PIN         5
 
-unsigned long forrigeTid = 0;
+#define PIXELMUNN      15             //Antall LEDs i munn
+#define PIXELOYE       12             //Antall LEDs i oynene
+
+// unsigned long forrigeTid = 0;
 
 unsigned long tidNaa = 0;
+int forsinkelseSnurr = 125;
+// int nedtellingTid = 13500;
 
 const int gronnS1 = 9;
 const int rodS1 = 10;
 const int gronnS2 = 11;
 const int rodS2 = 12;
 
-boolean ferdig = false;
+//1 = true, 2 = false
+int svarS1 = 0;
+int svarS2 = 0;
 
-Adafruit_NeoPixel pixels(NUMPIXELS, MUNN, NEO_GRB + NEO_KHZ800);
+
+Adafruit_NeoPixel munn(PIXELMUNN, MUNN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel oyne(PIXELOYE, OYNE, NEO_GRB + NEO_KHZ800);
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 void setup() {
 
   Serial.begin(9600);
-  delay(3000); //sikkerhetsdelay ved oppstart
-  pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+  SPI.begin();                       // Initierer SPI bus for RFID-scanner
+  mfrc522.PCD_Init();                // Initialiserer MFRC522-scanneren
+
+  delay(3000);                       //Sikkerhetsdelay ved oppstart for å hindre kortslutting
+  munn.begin();                      // Initialiserer LED-strip
   oyne.begin();
-  pixels.setBrightness(40); //Justerer lysstyrke på LEDs
+  munn.setBrightness(40);            //Justerer lysstyrke på LEDs
   oyne.setBrightness(40);
-  pinMode(gronnS1, INPUT_PULLUP);       //Reverserer input-signal slik at de alltid sender HIGH, og programmet lytter etter LOW
-  pinMode(rodS1, INPUT_PULLUP);         //Dette må gjøres siden knappene kun har to 'pins', og vil gi merkelige resultater ellers
+  pinMode(gronnS1, INPUT_PULLUP);    //Reverserer input-signal slik at de alltid sender HIGH, og programmet lytter etter LOW
+  pinMode(rodS1, INPUT_PULLUP);      //Dette må gjøres siden knappene kun har to 'pins', og vil gi merkelige resultater ellers
   pinMode(gronnS2, INPUT_PULLUP);
   pinMode(rodS2, INPUT_PULLUP);
-  
+
 }
 
 void loop() {
-  pixels.clear(); // Set all pixel colors to 'off'
+  munn.clear();                     // Slår av alle pixler i munn
+  oyne.clear();                     // Slår av alle pixler i øyne
 
-  //oyeAv();
-  while (!ferdig) {
-    nedtelling();
-  }
-  
 
-  ferdig = false;
+
+  nedtelling();
+
 }
 
-void allePaa() { //Setter alle LEDs i munnen til å være på med hvitt lys
-  for (int i = 0; i < NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(255, 255, 255));
-    
+void munnPaa() {                    //Setter alle LEDs i munnen til å være på med hvitt lys
+  for (int i = 0; i < PIXELMUNN; i++) {
+    munn.setPixelColor(i, munn.Color(255, 255, 255));
+
   }
 }
 
-void alleAv() { //Slår av alle LEDs i munnen
-  for (int i = 0; i < NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+void munnAv() {                     //Slår av alle LEDs i munnen
+  for (int i = 0; i < PIXELMUNN; i++) {
+    munn.setPixelColor(i, munn.Color(0, 0, 0));
   }
+}
+
+void faktaLys() {
+    for (int i = 0; i < PIXELMUNN; i++) {
+      munn.setPixelColor(i, munn.Color(0, 255, 0));
+    }
+    munn.show();
+
+    for (int i = 0; i < PIXELOYE; i++) {
+      oyne.setPixelColor(i, oyne.Color(0, 255, 0));
+    }
+    oyne.show();
+}
+
+void fleipLys() {
+    for (int i = 0; i < PIXELMUNN; i++) {
+      munn.setPixelColor(i, munn.Color(255, 0, 0));
+    }
+    munn.show();
+
+    for (int i = 0; i < PIXELOYE; i++) {
+      oyne.setPixelColor(i, oyne.Color(255, 0, 0));
+    }
+    oyne.show();
 }
 
 void oyeSnurr() {
-  oyeAv();
+    oyne.clear();
+  // oyeAv();                       //Starter med alle pixler slått av
+
   for (int i = 0; i < PIXELOYE; i++) {
-    oyeVenstre.setPixelColor(i, oyne.Color(255, 255, 255));
-    oyeVenstre.show();
-    forsinkelse(125);
+    oyne.setPixelColor(i, oyne.Color(255, 255, 255));
+    oyne.show();
+    tidNaa = millis();
+    while ((millis() - tidNaa) >= forsinkelseSnurr) {
+        sjekkTrykk();
+    }
   }
 
   for (int i = 0; i < PIXELOYE; i++) {
-    oyeVenstre.setPixelColor(i, oyne.Color(0, 0, 0));
-    oyeVenstre.show();
-    forsinkelse(125);
+    oyne.setPixelColor(i, oyne.Color(0, 0, 0));
+    oyne.show();
+    tidNaa = millis();
+    while ((millis() - tidNaa) >= forsinkelseSnurr) {
+        sjekkTrykk();
+    }
   }
-  
+
 }
 
-void oyeAv() { //Slår av lysene i øyne
+void oyeAv() {                    //Slår av lysene i øyne
   for (int j = 0; j < PIXELOYE; j++) {
-      oyeVenstre.setPixelColor(j, oyne.Color(0, 0, 0));
-      oyeVenstre.show();
+      oyne.setPixelColor(j, oyne.Color(0, 0, 0));
+      oyne.show();
   }
 }
 
-void forsinkelse(int forsinkelse) { //For å unngå problemer med delay(), bruker vi heller millis() for å skape en forsinkelse
+/*void forsinkelse(int forsinkelse) { //For å unngå problemer med delay(), bruker vi heller millis() for å skape en forsinkelse
   forrigeTid = millis();
   while (millis() < forrigeTid + forsinkelse) {
     //Vent [forsinkelse] ms
   }
-}
+}*/
 
 boolean nedtelling() {
 
-  tidNaa = millis();
+  // sjekkTrykk();
+  munnPaa();
+  munn.show();
 
-  sjekkTrykk();
-  allePaa();
-  pixels.show();
+  oyeSnurr();                    //Sørger for et 1500ms delay, totalt 13500ms nedtelling
+  // sjekkTrykk();
+  munn.setPixelColor(7, munn.Color(0, 0, 0));
+  munn.show();
 
-  //forsinkelse(1500);
   oyeSnurr();
-  sjekkTrykk();
-  pixels.setPixelColor(7, pixels.Color(0, 0, 0));
-  pixels.show();
+  // sjekkTrykk();
+  munn.setPixelColor(6, munn.Color(0, 0, 0));
+  munn.setPixelColor(8, munn.Color(0, 0, 0));
+  munn.show();
 
-  //forsinkelse(1500);
   oyeSnurr();
-  sjekkTrykk();
-  pixels.setPixelColor(6, pixels.Color(0, 0, 0));
-  pixels.setPixelColor(8, pixels.Color(0, 0, 0));
-  pixels.show();
+  // sjekkTrykk();
+  munn.setPixelColor(5, munn.Color(0, 0, 0));
+  munn.setPixelColor(9, munn.Color(0, 0, 0));
+  munn.show();
 
-  //forsinkelse(1500);
   oyeSnurr();
-  sjekkTrykk();
-  pixels.setPixelColor(5, pixels.Color(0, 0, 0));
-  pixels.setPixelColor(9, pixels.Color(0, 0, 0));
-  pixels.show();
-
-  //forsinkelse(1500);
-  oyeSnurr();
-  sjekkTrykk();
-  pixels.setPixelColor(4, pixels.Color(0, 0, 0));
-  pixels.setPixelColor(10, pixels.Color(0, 0, 0));
-  pixels.show();
-  sjekkTrykk();
-  //forsinkelse(1500);
+  // sjekkTrykk();
+  munn.setPixelColor(4, munn.Color(0, 0, 0));
+  munn.setPixelColor(10, munn.Color(0, 0, 0));
+  munn.show();
+  // sjekkTrykk();
   oyeSnurr();
 
-  pixels.setPixelColor(3, pixels.Color(0, 0, 0));
-  pixels.setPixelColor(11, pixels.Color(0, 0, 0));
-  pixels.show();
-  sjekkTrykk();
-  //forsinkelse(1500);
+  munn.setPixelColor(3, munn.Color(0, 0, 0));
+  munn.setPixelColor(11, munn.Color(0, 0, 0));
+  munn.show();
+  // sjekkTrykk();
   oyeSnurr();
 
-  pixels.setPixelColor(2, pixels.Color(0, 0, 0));
-  pixels.setPixelColor(12, pixels.Color(0, 0, 0));
-  pixels.show();
-  sjekkTrykk();
-  //forsinkelse(1500);
-  
+  munn.setPixelColor(2, munn.Color(0, 0, 0));
+  munn.setPixelColor(12, munn.Color(0, 0, 0));
+  munn.show();
+  // sjekkTrykk();
+
   oyeSnurr();
-  sjekkTrykk();
-  pixels.setPixelColor(1, pixels.Color(0, 0, 0));
-  pixels.setPixelColor(13, pixels.Color(0, 0, 0));
-  pixels.show();
-  sjekkTrykk();
-  //forsinkelse(1500);
+  // sjekkTrykk();
+  munn.setPixelColor(1, munn.Color(0, 0, 0));
+  munn.setPixelColor(13, munn.Color(0, 0, 0));
+  munn.show();
+  // sjekkTrykk();
 
   oyeSnurr();
 
-  pixels.setPixelColor(0, pixels.Color(0, 0, 0));
-  pixels.setPixelColor(14, pixels.Color(0, 0, 0));
-  pixels.show();
+  munn.setPixelColor(0, munn.Color(0, 0, 0));
+  munn.setPixelColor(14, munn.Color(0, 0, 0));
+  munn.show();
 
-  //forsinkelse(1500);
   oyeSnurr();
-  sjekkTrykk();
+  // sjekkTrykk();
   tidUte();
 
 }
 
 void tidUte() {
-  ferdig = true;
-  
   for (int i = 0; i<4; i++) {
     blinking();
   }
 }
 
 void blinking() {
-  allePaa();
-  pixels.show();
-  forsinkelse(200);
-  alleAv();
-  pixels.show();
-  forsinkelse(200);
+  munnPaa();
+  munn.show();
+  delay(200)
+  munnAv();
+  munn.show();
+  delay(200);
 }
 
 void sjekkTrykk() {
   if (digitalRead(gronnS1) == LOW) {
-        Serial.println("Grønn 1");
-        delay(250);
+        svarS1 = 1;
+        Serial.println("S1 true");
     };
-    
+
     if (digitalRead(rodS1) == LOW) {
-        Serial.println("Rød 1");
-        delay(250);
+        svarS1 = 2;
+        Serial.println("S1 false");
     };
-    
+
     if (digitalRead(gronnS2) == LOW) {
-        Serial.println("G2 OK");
+        svarS2 = 1;
+        Serial.println("S2 true");
     };
-    
+
     if (digitalRead(rodS2) == LOW) {
-        Serial.println("R2 OK");
+        svarS2 = 2;
+        Serial.println("S2 false");
     }
+}
+
+void sjekkSvar(int riktig) {
+    if (svarS1 == riktig) {
+        //Grønn pære lyser
+    } else if (svarS1 != riktig) {
+        //Rød pære lyser
+    }
+    if (svarS2 == riktig) {
+        //Grønn pære lyser
+    } else if (svarS2 != riktig) {
+        //Rød pære lyser
+    }
+
+    delay(5000);
+
+
 }
