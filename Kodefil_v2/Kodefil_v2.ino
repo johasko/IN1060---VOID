@@ -121,10 +121,11 @@ void oyeSnurr() {
   for (int i = 0; i < PIXELOYE; i++) {
     oyne.setPixelColor(i, oyne.Color(0, 0, 0));
     oyne.show();
-    tidNaa = millis();
+    forsinkelse(125);
+    /*tidNaa = millis();
     while ((millis() - tidNaa) >= forsinkelseSnurr) {
         sjekkTrykk();
-    }
+    }*/
   }
 
 }
@@ -133,15 +134,17 @@ void oyeAv() {                    //Slår av lysene i øyne
   for (int j = 0; j < PIXELOYE; j++) {
       oyne.setPixelColor(j, oyne.Color(0, 0, 0));
       oyne.show();
+      forsinkelse(125);
   }
 }
 
-/*void forsinkelse(int forsinkelse) { //For å unngå problemer med delay(), bruker vi heller millis() for å skape en forsinkelse
+void forsinkelse(int forsinkelse) { //For å unngå problemer med delay(), bruker vi heller millis() for å skape en forsinkelse
   forrigeTid = millis();
   while (millis() < forrigeTid + forsinkelse) {
     //Vent [forsinkelse] ms
+    sjekkTrykk();
   }
-}*/
+}
 
 boolean nedtelling() {
 
