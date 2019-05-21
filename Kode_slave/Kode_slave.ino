@@ -12,7 +12,6 @@ const int led = 8;
 int serNum[5];
 int kategori;
 
-
 int cards[][5] = {{138,84,37,131,120}};
 
 #define SLAVE_ADDR    9
@@ -21,7 +20,7 @@ byte svar[ANSWER_SIZE];
 
 void setup() {
   Serial.begin(9600);
-  SPI.begin();
+  SPI.begin();      // Initierer SPI bus for RFID-scanner
   rfid.init();
   pinMode(power, OUTPUT);
   digitalWrite(power, LOW);
@@ -35,10 +34,9 @@ void requestEvent() {
     if(rfid.isCard()){
     
         if(rfid.readCardSerial()){
-            kort = rfid.serNum[1];
-            
+            kort = rfid.serNum[1];  
         }
-
+        
         if(kort == 197){
             kategori = 1;
         }else if(kort == 84){
@@ -46,13 +44,9 @@ void requestEvent() {
         }
 
         Wire.write(kategori);
-
     }
     
-    
-    
     rfid.halt();
-  
 }
 
 void loop() {
