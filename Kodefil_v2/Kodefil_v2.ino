@@ -1,9 +1,15 @@
-#include <Adafruit_NeoPixel.h>
-#ifdef __AVR__
- #include <avr/power.h>               // Required for 16 MHz Adafruit Trinket
-#endif
+/*
+ * Kodefil for prosjektoppgave i IN1060 v2019
+ * Gruppemedlemmer:
+ * • Sverre Blom Breivik
+ * • Unni Le
+ * • Johannes Skøien
+ * • Kristian Arnesen Vik
+ * • Martine Woldseth
+ */
 
-#include <Wire.h>                     // Library for sammenkobling av arduinoer
+#include <Adafruit_NeoPixel.h>
+#include <Wire.h>                          // Library for sammenkobling av arduinoer
 
 #define MUNN                7
 #define OYNE                8
