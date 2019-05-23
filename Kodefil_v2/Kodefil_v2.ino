@@ -11,8 +11,8 @@
 #include <Adafruit_NeoPixel.h>
 #include <Wire.h>                          // Library for sammenkobling av arduinoer
 
-#define MUNN                7
-#define OYNE                8
+#define MUNN                8
+#define OYNE                9
 
 #define SLAVE_ADDR          9              //Definerer nummer for slave-Arduino
 #define ANSWER_SIZE         1              //Størrelse på forventet svar fra slave
@@ -24,15 +24,19 @@ unsigned long forrigeTid =  0;
 
 int forsinkelseSnurr =      125;
 
-const int gronnL1 = 6;
-const int rodL1 =   5;
-const int gronnL2 = 4;
-const int rodL2 =   3;
+int kortReg[] = {262, 294, 400};
 
-const int gronnS1 = 9;
-const int rodS1 =   10;
-const int gronnS2 = 11;
-const int rodS2 =   12;
+const int gronnL1 = 7;
+const int rodL1 =   6;
+const int gronnL2 = 5;
+const int rodL2 =   4;
+
+const int gronnS1 = 10;
+const int rodS1 =   11;
+const int gronnS2 = 12;
+const int rodS2 =   13;
+
+const int lydUt = 3;
 
 //1 = true, 2 = false
 int svarS1 = 0;
@@ -43,6 +47,8 @@ int kort;
 //1 = true, 2 = false
 int svarKat1[5] = {1, 1, 2, 1,2};
 int svarKat2[5] = {2, 2, 1, 2, 1};
+int lydfilerKat1[5] = {1, 2, 3, 4, 5};
+int lydfilerKat2[5] = {6, 7, 8, 9, 10};
 
 
 Adafruit_NeoPixel munn(PIXELMUNN, MUNN, NEO_GRB + NEO_KHZ800);
@@ -73,9 +79,6 @@ void loop() {
   munn.clear();                     // Slår av alle pixler i munn
   oyne.clear();                     // Slår av alle pixler i øyne
 
-  //Wire.beginTransmission(SLAVE_ADDR);
-  //Wire.write(0);
-  //Wire.endTransmission();
   svarS1 = 0;
   svarS2 = 0;
   kort = 0;
@@ -90,19 +93,19 @@ void loop() {
      }
   }
 
-  
-  Serial.print("KategoriID: ");
-  Serial.println(kort);
+  registrertKort();
+  //Serial.print("KategoriID: ");
+  //Serial.println(kort);
   velgKat(kort);
 
 }
 
 void velgKat(int kort) {
   if (kort == 1) {
-    Serial.println("Kategori 1 valgt");
+    //Serial.println("Kategori 1 valgt");
     spill(1);
   } else if (kort == 2) {
-    Serial.println("Kategori 2 valgt");
+    //Serial.println("Kategori 2 valgt");
     spill(2);
   }
 }
@@ -111,7 +114,7 @@ void spill(int kat) {
 
   if (kat == 1) {
     for (int i = 0; i < sizeof(svarKat2); i++) {
-    //Send signal til raspberry pi for lyd
+    Serial.write(lydfilerKat1[i]);
     //delay(varighet av lydfil)?
     nedtelling();
     delay(2000);
@@ -132,7 +135,7 @@ void spill(int kat) {
   } 
   else {
     for (int i = 0; i < sizeof(svarKat2); i++) {
-    //Send signal til raspberry pi for lyd
+    Serial.write(lydfilerKat2[i]);
     //delay(varighet av lydfil)?
     nedtelling();
     delay(1000);
@@ -158,25 +161,25 @@ void sjekkTrykk() {
   if (digitalRead(gronnS1) == LOW) {
         svarS1 = 1;
         bekreftTrykkS1();
-        Serial.println("S1 true");
+        //Serial.println("S1 true");
     };
 
     if (digitalRead(rodS1) == LOW) {
         svarS1 = 2;
         bekreftTrykkS1();
-        Serial.println("S1 false");
+        //Serial.println("S1 false");
     };
 
     if (digitalRead(gronnS2) == LOW) {
         svarS2 = 1;
         bekreftTrykkS2();
-        Serial.println("S2 true");
+        //Serial.println("S2 true");
     };
 
     if (digitalRead(rodS2) == LOW) {
         svarS2 = 2;
         bekreftTrykkS2();
-        Serial.println("S2 false");
+        //Serial.println("S2 false");
     }
 }
 
@@ -362,4 +365,14 @@ void bekreftTrykkS1() {
 void bekreftTrykkS2() {
   digitalWrite(gronnL2, HIGH);
   digitalWrite(rodL2, HIGH);
+}
+
+void registrertKort() {
+  tone(lydUt, kortReg[0]);
+  delay(200);
+  tone(lydUt, kortReg[1]);
+  delay(200);
+  tone(lydUt, kortReg[2]);
+  delay(200);
+  noTone(lydUt);
 }
