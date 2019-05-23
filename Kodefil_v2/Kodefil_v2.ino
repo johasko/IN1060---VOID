@@ -24,10 +24,11 @@ unsigned long forrigeTid =  0;
 
 int forsinkelseSnurr =      125;
 
-const int gronnL1 = 5;
-const int rodL1 =   6;
+const int gronnL1 = 6;
+const int rodL1 =   5;
 const int gronnL2 = 4;
 const int rodL2 =   3;
+
 const int gronnS1 = 9;
 const int rodS1 =   10;
 const int gronnS2 = 11;
@@ -114,7 +115,8 @@ void spill(int kat) {
     //delay(varighet av lydfil)?
     nedtelling();
     delay(2000);
-    sjekkSvar(svarKat1[i]);
+    sjekkSvarS1(svarKat1[i]);
+    sjekkSvarS2(svarKat1[i]);
     if (svarKat1[i] == 1) {
       alleGronn();
     } else {
@@ -124,6 +126,8 @@ void spill(int kat) {
     munnAv();
     oyeAv();
     slukkLysKontroll();
+    svarS1 = 0;
+    svarS2 = 0;
     }
   } 
   else {
@@ -132,7 +136,8 @@ void spill(int kat) {
     //delay(varighet av lydfil)?
     nedtelling();
     delay(1000);
-    sjekkSvar(svarKat2[i]);
+    sjekkSvarS1(svarKat2[i]);
+    sjekkSvarS2(svarKat2[i]);
     if (svarKat2[i] == 1) {
       alleGronn();
     } else {
@@ -142,6 +147,8 @@ void spill(int kat) {
     munnAv();
     oyeAv();
     slukkLysKontroll();
+    svarS1 = 0;
+    svarS2 = 0;
     }
   }
   
@@ -150,39 +157,48 @@ void spill(int kat) {
 void sjekkTrykk() {
   if (digitalRead(gronnS1) == LOW) {
         svarS1 = 1;
-        bekreftTrykk(1);
+        bekreftTrykkS1();
         Serial.println("S1 true");
     };
 
     if (digitalRead(rodS1) == LOW) {
         svarS1 = 2;
-        bekreftTrykk(1);
+        bekreftTrykkS1();
         Serial.println("S1 false");
     };
 
     if (digitalRead(gronnS2) == LOW) {
         svarS2 = 1;
-        bekreftTrykk(2);
+        bekreftTrykkS2();
         Serial.println("S2 true");
     };
 
     if (digitalRead(rodS2) == LOW) {
         svarS2 = 2;
-        bekreftTrykk(2);
+        bekreftTrykkS2();
         Serial.println("S2 false");
     }
 }
 
-void sjekkSvar(int riktig) {
+void sjekkSvarS1(int riktig) {
     if (svarS1 == riktig) {
         digitalWrite(gronnL1, HIGH);
-    } else if (svarS1 != riktig) {
+    } else if (svarS1 == 0) {
+        digitalWrite(rodL1, LOW);
+        digitalWrite(gronnL1, LOW);
+    } else {
         digitalWrite(rodL1, HIGH);
     }
-    
-    if (svarS2 == riktig) {
+}
+
+void sjekkSvarS2(int riktig) {
+  if (svarS2 == riktig) {
         digitalWrite(gronnL2, HIGH);
-    } else if (svarS2 != riktig) {
+    } else if (svarS2 == 0) {
+        digitalWrite(rodL2, LOW);
+        digitalWrite(gronnL2, LOW);
+        
+    } else {
         digitalWrite(rodL2, HIGH);
     }
 }
@@ -338,14 +354,12 @@ void slukkLysKontroll() {
   digitalWrite(rodL2, LOW);
 }
 
-void bekreftTrykk(int spiller) {
-  if (spiller == 1) {
-    digitalWrite(gronnL1, HIGH);
-    digitalWrite(rodL1, HIGH);
-  }
+void bekreftTrykkS1() {
+  digitalWrite(gronnL1, HIGH);
+  digitalWrite(rodL1, HIGH);
+}
 
-  if (spiller == 2) {
-    digitalWrite(gronnL2, HIGH);
-    digitalWrite(rodL2, HIGH);
-  }
+void bekreftTrykkS2() {
+  digitalWrite(gronnL2, HIGH);
+  digitalWrite(rodL2, HIGH);
 }
