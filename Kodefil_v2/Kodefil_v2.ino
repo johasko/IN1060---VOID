@@ -101,7 +101,7 @@ void loop() {
 
 void velgKat(int kort) {
   if (kort == 1) {
-    Serial.write(11);
+    Serial.write(11);                      //Sender signal til Raspberry Pi via Serial for å spille av lydfil
     delay(4000);
     spill(1);
   } 
