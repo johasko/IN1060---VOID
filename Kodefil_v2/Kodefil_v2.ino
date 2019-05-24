@@ -101,13 +101,9 @@ void loop() {
 
 void velgKat(int kort) {
   if (kort == 1) {
-    Serial.write(11);                      //Sender signal til Raspberry Pi via Serial for å spille av lydfil
-    delay(4000);
     spill(1);
   } 
   else if (kort == 2) {
-    Serial.write(12);
-    delay(4000);
     spill(2);
   }
 }
@@ -115,6 +111,8 @@ void velgKat(int kort) {
 void spill(int kat) {
 
   if (kat == 1) {
+    Serial.write(12);                      //Sender signal til Raspberry Pi via Serial for å spille av lydfil
+    delay(6000);
     for (int i = 0; i < sizeof(svarKat2); i++) {
       Serial.write(lydfilerKat1[i]);
       delay(forsinkelserKat1[i]);
@@ -136,10 +134,12 @@ void spill(int kat) {
       slukkLysKontroll();
       svarS1 = 0;
       svarS2 = 0;
-      delay(3000);
+      delay(1000);
     }
   } 
   else {
+    Serial.write(11);
+    delay(6000);
     for (int i = 0; i < sizeof(svarKat2); i++) {
       Serial.write(lydfilerKat2[i]);
       delay(forsinkelserKat2[i]);
@@ -161,7 +161,7 @@ void spill(int kat) {
       slukkLysKontroll();
       svarS1 = 0;
       svarS2 = 0;
-      delay(3000);
+      delay(1000);
       }
   } 
 }
@@ -327,6 +327,7 @@ void munnAv() {                            //Slår av alle LEDs i munnen
   for (int i = 0; i < PIXELMUNN; i++) {
     munn.setPixelColor(i, munn.Color(0, 0, 0));
   }
+  munn.show();
 }
 
 void oyeSnurr() {
@@ -336,13 +337,13 @@ void oyeSnurr() {
   for (int i = 0; i < PIXELOYE; i++) {
     oyne.setPixelColor(i, oyne.Color(255, 255, 255));
     oyne.show();
-    forsinkelse(125);
+    forsinkelse(100);
   }
 
   for (int i = 0; i < PIXELOYE; i++) {
     oyne.setPixelColor(i, oyne.Color(0, 0, 0));
     oyne.show();
-    forsinkelse(125);
+    forsinkelse(100);
   }
 
 }
