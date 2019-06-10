@@ -7,25 +7,18 @@
 
 RFID rfid(SS_PIN, RST_PIN);
 
-const int power = 7;
-const int led = 8; 
 int serNum[5];
 int kategori;
 
-int cards[][5] = {{138,84,37,131,120}};
-
 #define SLAVE_ADDR    9
-#define ANSWER_SIZE   1
-byte svar[ANSWER_SIZE];
+#define ANSWER_SIZE   1                     //Forventet lengde paa etterspurt svar
 
 void setup() {
   Serial.begin(9600);
-  SPI.begin();      // Initierer SPI bus for RFID-scanner
+  SPI.begin();                              // Initierer SPI bus for RFID-scanner
   rfid.init();
-  pinMode(power, OUTPUT);
-  digitalWrite(power, LOW);
-  Wire.begin(SLAVE_ADDR);
-  Wire.onRequest(requestEvent);
+  Wire.begin(SLAVE_ADDR);                   //Starter Wire-connection og initierer requestEvent paa foresporsel fra master
+  Wire.onRequest(requestEvent);             //
 }
 
 void requestEvent() {
